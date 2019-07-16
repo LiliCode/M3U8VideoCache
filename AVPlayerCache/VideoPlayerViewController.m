@@ -54,7 +54,7 @@
     
     
     
-    self.playerItem1 = [AVPlayerItem playerItemWithURL:[M3U8VideoCache proxyURLWithOriginalURL:[NSURL URLWithString:@"http://cdn-09.gxgjmsj.com/media/km3u8/5b6/5b60ac39a4062bc0bec1ee9c7d7d379e/index.m3u8?_v=20190322"]]];
+    self.playerItem1 = [AVPlayerItem playerItemWithURL:[M3U8VideoCache proxyURLWithOriginalURL:[NSURL URLWithString:@"http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4"]]];
     
     self.player1 = [AVPlayer playerWithPlayerItem:self.playerItem1];
     self.playerLayer1 = [AVPlayerLayer playerLayerWithPlayer:self.player1];

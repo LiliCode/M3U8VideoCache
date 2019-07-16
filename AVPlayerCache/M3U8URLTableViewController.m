@@ -21,9 +21,7 @@
     [super viewDidLoad];
     
     self.videoURLs = [NSMutableArray new];
-    [self.videoURLs addObject:@"http://cdn-168.bmxjgp.com/uploads/km3u8/847/8473b3a649c08ef8b36628ac9b9f2f45/index.m3u8"];
-    [self.videoURLs addObject:@"http://cdn-168.bmxjgp.com/uploads/km3u8/932/93202544212b352259a27cec20a56537/index.m3u8"];
-    [self.videoURLs addObject:@"http://cdn-168.bmxjgp.com/uploads/km3u8/c0c/c0c15ff225fde2e997248644e518480a/index.m3u8"];
+    [self.videoURLs addObject:@"实例链接: http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4"];
 }
 
 #pragma mark - Table view data source
