@@ -36,3 +36,12 @@ pod 'M3U8VideoCache', :git=> 'https://github.com/LiliCode/M3U8VideoCache.git'
 
 1. 参考 [KTVHTTPCache](https://github.com/ChangbaDevs/KTVHTTPCache) 
 2. 参考资料：https://www.jianshu.com/p/2314782a16c3
+
+## GCDWebServer
+
+1. [GCDWebServer -> Github](https://github.com/swisspol/GCDWebServer)
+2. GCDWebServer 使用方法中文版: https://www.jianshu.com/p/534632485234
+
+## m3u8 原理及简介
+1. https://www.jianshu.com/p/979af6f79c63
+2. https://blog.csdn.net/liubangbo/article/details/87779996
