@@ -52,7 +52,7 @@
             [weakSelf rerunPlayVideo];
         }
     }];
-
+    
     [self.playerItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:NULL];
 }
 
