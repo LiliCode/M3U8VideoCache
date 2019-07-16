@@ -16,7 +16,7 @@ Pod::Spec.new do |s|
   #
 
   s.name         = "M3U8VideoCache"
-  s.version      = "0.1.0"
+  s.version      = "0.1.1"
   s.summary      = "m3u8格式视频缓存框架，仅支持 m3u8 格式视频"
 
   # This description is used to generate tags and improve search results.
@@ -28,7 +28,7 @@ Pod::Spec.new do |s|
   一个 m3u8 格式视频缓存框架，可以边播放边缓存，一行代码实现播放缓存。
                    DESC
 
-  s.homepage     = "https://github.com/LiliCode/Router-objc"
+  s.homepage     = "https://github.com/LiliCode/M3U8VideoCache"
   # s.screenshots  = "www.example.com/screenshots_1.gif", "www.example.com/screenshots_2.gif"
 
 
@@ -79,7 +79,7 @@ Pod::Spec.new do |s|
   #  Supports git, hg, bzr, svn and HTTP.
   #
 
-  s.source       = { :git => "https://github.com/LiliCode/Router-objc.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/LiliCode/M3U8VideoCache.git", :tag => "#{s.version}" }
 
 
   # ――― Source Code ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #
