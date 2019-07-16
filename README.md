@@ -12,9 +12,10 @@ pod 'M3U8VideoCache', :git=> 'https://github.com/LiliCode/M3U8VideoCache.git'
 1. 在 AppDelegate.m 中开启本地代理服务器
 ```objc
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-
+    // 端口号：port 随便你怎么传，只要不和其他App冲突就行
+    // bonjourName: 随你怎么整，看你心情...
     [M3U8VideoCache proxyStartWithPort:9998 bonjourName:@"demo_proxy"];
-
+    
     return YES;
 }
 ```
