@@ -14,9 +14,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface M3U8IndexFileParse : NSObject
 
-/// 解析 index.m3u8 索引文件
+/**
+ 通过index.m3u8索引文件的路径来解析文件
+
+ @param fileURLString 文件路径
+ @return 返回解析之后的片段信息
+ */
 + (NSArray<M3U8TSInfo *> *)parseM3u8IndexFile:(NSString *)fileURLString;
-/// 解析 index.m3u8 索引字符串
+
+/**
+ 解析 index.m3u8 索引字符串
+
+ @param indexString 索引文件的字符串
+ @return 返回解析之后的片段信息
+ */
 + (NSArray<M3U8TSInfo *> *)parseM3u8IndexString:(NSString *)indexString;
 
 @end

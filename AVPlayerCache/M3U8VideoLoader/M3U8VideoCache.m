@@ -9,7 +9,6 @@
 #import "M3U8VideoCache.h"
 #import "M3U8VideoCacheTool.h"
 #import "M3U8VideoHTTPServer.h"
-#import "M3U8VideoLoaderManager.h"
 
 @implementation M3U8VideoCache
 
@@ -35,6 +34,10 @@
 
 + (void)cleanCacheWithCallback:(void (^)(void))callback {
     [[M3U8VideoCacheTool sharedCache] cleanCacheWithCallback:callback];
+}
+
++ (void)cleanCache:(BOOL (^ _Nullable)(NSString *videoURL))canRemoveBlock callback:(void (^ _Nullable )(void))callback {
+    return [[M3U8VideoCacheTool sharedCache] cleanCache:canRemoveBlock callback:callback];
 }
 
 @end

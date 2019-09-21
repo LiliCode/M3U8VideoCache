@@ -42,13 +42,24 @@
             NSMutableDictionary *encInfoDic = [NSMutableDictionary new];
             NSArray *array = [encInfoString componentsSeparatedByString:@","];
             for (NSString *keyValue in array) {
-                NSArray *keyValueList = [keyValue componentsSeparatedByString:@"="];
-                if ([keyValueList.firstObject isEqualToString:@"URI"]) {
-                    // 删除字符串中的引号
-                    NSMutableString *value = [keyValueList.lastObject mutableCopy];
-                    [encInfoDic setObject:[value stringByReplacingOccurrencesOfString:@"\"" withString:@""] forKey:keyValueList.firstObject];
-                } else {
-                    [encInfoDic setObject:keyValueList.lastObject forKey:keyValueList.firstObject];
+                @autoreleasepool {
+                    NSArray *keyValueList = nil;
+                    if ([keyValue hasPrefix:@"URI="]) { // 防止 URI 的链接中存在参数
+                        NSMutableArray *mKeyValue = [NSMutableArray new];
+                        [mKeyValue addObject:@"URI"];
+                        [mKeyValue addObject:[keyValue componentsSeparatedByString:@"URI="].lastObject];
+                        keyValueList = [mKeyValue copy];
+                    } else {
+                        keyValueList = [keyValue componentsSeparatedByString:@"="];
+                    }
+                    
+                    if ([keyValueList.firstObject isEqualToString:@"URI"]) {
+                        // 删除字符串中的引号
+                        NSMutableString *value = [keyValueList.lastObject mutableCopy];
+                        [encInfoDic setObject:[value stringByReplacingOccurrencesOfString:@"\"" withString:@""] forKey:keyValueList.firstObject];
+                    } else {
+                        [encInfoDic setObject:keyValueList.lastObject forKey:keyValueList.firstObject];
+                    }
                 }
             }
             

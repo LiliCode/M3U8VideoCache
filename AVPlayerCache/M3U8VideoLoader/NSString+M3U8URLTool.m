@@ -33,4 +33,16 @@
     return [self hasSuffix:@".key"] || [self containsString:@".key"];
 }
 
++ (NSString *)stringWithbytes:(int)bytes {
+    if (bytes < 1024) { // B
+        return [NSString stringWithFormat:@"%dB", bytes];
+    } else if (bytes >= 1024 && bytes < 1024 * 1024) { // KB
+        return [NSString stringWithFormat:@"%.0fKB", (double)bytes / 1024];
+    } else if (bytes >= 1024 * 1024 && bytes < 1024 * 1024 * 1024) { // MB
+        return [NSString stringWithFormat:@"%.1fMB", (double)bytes / (1024 * 1024)];
+    } else { // GB
+        return [NSString stringWithFormat:@"%.1fGB", (double)bytes / (1024 * 1024 * 1024)];
+    }
+}
+
 @end

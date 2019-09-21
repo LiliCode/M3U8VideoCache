@@ -43,6 +43,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 - (BOOL)keyURLString;
 
+/**
+ 网速装换成可视化的字符串
+
+ @param bytes 网速
+ @return 可读取的网速字符串（例如：28KB/s）
+ */
++ (NSString *)stringWithbytes:(int)bytes;
+
 @end
 
 NS_ASSUME_NONNULL_END

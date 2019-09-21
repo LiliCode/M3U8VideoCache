@@ -60,7 +60,15 @@ NS_ASSUME_NONNULL_BEGIN
 
  @param callback 清除完成之后的回调
  */
-+ (void)cleanCacheWithCallback:(void (^)(void))callback;
++ (void)cleanCacheWithCallback:(void (^ _Nullable )(void))callback;
+
+/**
+ 清除缓存
+ 
+ @param canRemoveBlock 是否可以清除这个视频缓存
+ @param callback 清除完成之后的回调
+ */
++ (void)cleanCache:(BOOL (^ _Nullable)(NSString *videoURL))canRemoveBlock callback:(void (^ _Nullable )(void))callback;
 
 @end
 

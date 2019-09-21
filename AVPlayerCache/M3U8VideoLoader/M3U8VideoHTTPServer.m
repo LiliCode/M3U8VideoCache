@@ -70,6 +70,7 @@ static M3U8VideoHTTPServer *_httpServer = nil;
     __weak typeof (self) weakSelf = self;
     [self.webServer addDefaultHandlerForMethod:@"GET" requestClass:[GCDWebServerRequest class] asyncProcessBlock:^(__kindof GCDWebServerRequest * _Nonnull request, GCDWebServerCompletionBlock  _Nonnull completionBlock) {
         NSLog(@"本地代理服务器 -> 拦截请求：%@", request.URL.absoluteString);
+        NSLog(@"请求头 Headers -> %@", request.headers);
         // 发出异步请求
         [weakSelf.httpResponse request:request completionBlock:completionBlock];
     }];

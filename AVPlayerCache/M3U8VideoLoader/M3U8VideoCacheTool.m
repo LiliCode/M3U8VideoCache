@@ -11,7 +11,7 @@
 #import <pthread.h>
 #include <CommonCrypto/CommonDigest.h>
 
-static NSString *MD5(NSString *string) {
+NSString *MD5(NSString *string) {
     //要进行UTF8的转码
     const char* input = [string UTF8String];
     unsigned char result[CC_MD5_DIGEST_LENGTH];
@@ -49,7 +49,7 @@ static NSString *MD5(NSString *string) {
     self = [super init];
     if (self) {
         _queue = [[NSOperationQueue alloc] init];
-        _queue.name = @"com.m3u8.download";
+        _queue.name = @"queue_M3U8TSDownload";
 #if TARGET_IPHONE_SIMULATOR
         _cacheRootFolder = @"/Users/mac/Documents/demo/proxy_m3u8VideoCache/";
 #elif TARGET_OS_IPHONE
@@ -107,6 +107,62 @@ static NSString *MD5(NSString *string) {
 
 #pragma mark - 缓存操作
 
+- (void)setResumeData:(NSData *)resumeData forURL:(NSString *)URLString {
+    if (!resumeData || !URLString.length) {
+        NSLog(@"%s 保存 resumeData 参数错误!", __FUNCTION__);
+        return;
+    }
+    
+    NSString *resumeDataRoot = _cacheRootFolder.append(@"/").append(@"resumeData/");
+    if ([self createFilePath:resumeDataRoot]) {
+        [resumeData writeToFile:resumeDataRoot.append(MD5(URLString)) atomically:YES];
+    }
+}
+
+- (NSData *)resumeDataForURL:(NSString *)URLString {
+    if (!URLString.length) {
+        NSLog(@"%s 获取 resumeData 参数错误!", __FUNCTION__);
+        return nil;
+    }
+    
+    NSString *resumeDataFilePath = _cacheRootFolder.append(@"/").append(@"resumeData/").append(MD5(URLString));
+    // 判断文件是否存在
+    if (![[NSFileManager defaultManager] fileExistsAtPath:resumeDataFilePath]) {
+        return nil;
+    }
+    
+    // 读取文件
+    NSFileHandle *handle = [NSFileHandle fileHandleForReadingAtPath:resumeDataFilePath];
+    NSData *data = [handle readDataToEndOfFile];
+    [handle closeFile];
+    // 删除临时数据
+    [self removeResumeDataForURL:URLString];
+    
+    return data;
+}
+
+- (void)removeResumeDataForURL:(NSString *)URLString {
+    if (!URLString.length) {
+        NSLog(@"%s 删除 resumeData 参数错误!", __FUNCTION__);
+        return;
+    }
+    
+    NSString *resumeDataFilePath = _cacheRootFolder.append(@"/").append(@"resumeData/").append(MD5(URLString));
+    // 判断文件是否存在
+    if (![[NSFileManager defaultManager] fileExistsAtPath:resumeDataFilePath]) {
+        return;
+    }
+    
+    // 删除临时数据
+    NSError *error = nil;
+    [[NSFileManager defaultManager] removeItemAtPath:resumeDataFilePath error:&error];
+    if (error) {
+        NSLog(@"删除 resumeData 临时数据失败: %@", error);
+    } else {
+        NSLog(@"删除 resumeData 临时数据成功");
+    }
+}
+
 - (void)setURL:(NSURL *)URL forKey:(id<NSCopying>)key {
     if (!URL || !key) {
         return;
@@ -129,6 +185,11 @@ static NSString *MD5(NSString *string) {
     }
     
     NSString *path = [URLString copy];
+    if ([path rangeOfString:@"?"].length) {
+        // 去掉后面的参数（鉴权的参数）
+        path = [path componentsSeparatedByString:@"?"].firstObject;
+    }
+    
     NSURL *URL = [NSURL URLWithString:URLString];
     path = [path stringByReplacingOccurrencesOfString:URL.lastPathComponent withString:@""];
     
@@ -178,6 +239,9 @@ static NSString *MD5(NSString *string) {
         NSString *path = [URLString stringByReplacingOccurrencesOfString:host withString:@""];
         NSMutableArray *pathComponents = [[path componentsSeparatedByString:@"/"] mutableCopy];
         NSString *encName = [pathComponents.lastObject copy];
+        if ([encName rangeOfString:@"?"].location != NSNotFound) {
+            encName = [encName componentsSeparatedByString:@"?"].firstObject;
+        }
         [pathComponents removeLastObject];
         // 建立文件夹
         NSString *encPath = [NSString stringWithFormat:@"%@%@", _cacheRootFolder, [pathComponents componentsJoinedByString:@"/"]];
@@ -220,6 +284,14 @@ static NSString *MD5(NSString *string) {
         // 写入数据
         NSURL *URL = [NSURL URLWithString:URLString];
         filePath = [NSString stringWithFormat:@"%@/%@", path, URL.lastPathComponent];
+        // 兼容其他数据
+        NSArray *array = [fileManager contentsOfDirectoryAtPath:path error:nil];
+        for (NSString *fileName in array) {
+            if ([fileName m3u8URLString]) {
+                filePath = [NSString stringWithFormat:@"%@/%@", path, fileName];
+                break;
+            }
+        }
     } else if ([URLString tsURLString]) {
         // 获取文件名
         NSURL *tsURL = [NSURL URLWithString:URLString];
@@ -231,6 +303,9 @@ static NSString *MD5(NSString *string) {
         NSString *path = [URLString stringByReplacingOccurrencesOfString:host withString:@""];
         NSMutableArray *pathComponents = [[path componentsSeparatedByString:@"/"] mutableCopy];
         NSString *encName = [pathComponents.lastObject copy];
+        if ([encName rangeOfString:@"?"].location != NSNotFound) {
+            encName = [encName componentsSeparatedByString:@"?"].firstObject;
+        }
         [pathComponents removeLastObject];
         // 密钥文件夹
         NSString *encPath = [NSString stringWithFormat:@"%@/%@", _cacheRootFolder, [pathComponents componentsJoinedByString:@"/"]];
@@ -263,6 +338,17 @@ static NSString *MD5(NSString *string) {
         // 写入数据
         NSURL *URL = [NSURL URLWithString:URLString];
         filePath = [NSString stringWithFormat:@"%@/%@", path, URL.lastPathComponent];
+        if (![fileManager fileExistsAtPath:filePath]) {
+            // 如果不存在这个文件，检测是否有 .m3u8 后缀的文件
+            // 兼容其他数据
+            NSArray *array = [fileManager contentsOfDirectoryAtPath:path error:nil];
+            for (NSString *fileName in array) {
+                if ([fileName m3u8URLString]) {
+                    filePath = [NSString stringWithFormat:@"%@/%@", path, fileName];
+                    break;
+                }
+            }
+        }
     } else if ([URLString tsURLString]) {
         // 获取文件名
         NSURL *tsURL = [NSURL URLWithString:URLString];
@@ -275,6 +361,9 @@ static NSString *MD5(NSString *string) {
         NSString *path = [URLString stringByReplacingOccurrencesOfString:host withString:@""];
         NSMutableArray *pathComponents = [[path componentsSeparatedByString:@"/"] mutableCopy];
         NSString *encName = [pathComponents.lastObject copy];
+        if ([encName rangeOfString:@"?"].location != NSNotFound) {
+            encName = [encName componentsSeparatedByString:@"?"].firstObject;
+        }
         [pathComponents removeLastObject];
         // 建立文件夹
         NSString *encPath = [NSString stringWithFormat:@"%@/%@", _cacheRootFolder, [pathComponents componentsJoinedByString:@"/"]];
@@ -288,8 +377,61 @@ static NSString *MD5(NSString *string) {
     return [fileManager fileExistsAtPath:filePath];
 }
 
+- (void)setVideoInfo:(NSData *)videoInfoData forURL:(NSString *)URLString {
+    if (!videoInfoData || !URLString.length) {
+        NSLog(@"%s: 保存视频信息失败", __FUNCTION__);
+        return;
+    }
+    
+    NSString *folderName = [self cacheNameForURL:URLString];
+    NSString *path = [_cacheRootFolder stringByAppendingPathComponent:folderName];
+    NSFileManager *fileManager = [NSFileManager defaultManager];
+    path = path.append(@"/").append(@"videoInfo.json");
+    // 按照划分好的路径创建文件并写入数据
+    BOOL isSuccess = [fileManager createFileAtPath:path contents:videoInfoData attributes:nil];
+    if (isSuccess) {
+        NSLog(@"写入视频信息 videoInfo.json 成功: %@", path);
+    } else {
+        NSLog(@"写入视频信息 videoInfo.json 失败: %@", path);
+    }
+}
+
+- (NSDictionary *)videoInfoForURL:(NSString *)URLString {
+    if (!URLString.length) {
+        NSLog(@"%s 读取视频信息文件失败: 参数错误", __FUNCTION__);
+        return nil;
+    }
+    
+    return [self videoInfoForFolder:[self cacheNameForURL:URLString]];
+}
+
+- (NSDictionary *)videoInfoForFolder:(NSString *)folderName {
+    NSString *path = [_cacheRootFolder stringByAppendingPathComponent:folderName];
+    path = path.append(@"/").append(@"videoInfo.json");
+    // 读取文件
+    NSFileHandle *handle = [NSFileHandle fileHandleForReadingAtPath:path];
+    NSData *data = [handle readDataToEndOfFile];
+    [handle closeFile];
+    if (!data) {
+        NSLog(@"读取视频信息文件 videoInfo.json 失败");
+        return nil;
+    }
+    
+    NSError *error = nil;
+    NSDictionary *info = [NSJSONSerialization JSONObjectWithData:data options:0 error:&error];
+    if (error) {
+        NSLog(@"视频信息文件 videoInfo.json 转码失败");
+        return nil;
+    }
+    
+    return info;
+}
 
 - (void)cleanCacheWithCallback:(void (^)(void))callback {
+    [self cleanCache:nil callback:callback];
+}
+
+- (void)cleanCache:(BOOL (^)(NSString * _Nonnull))canRemoveBlock callback:(void (^)(void))callback {
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         NSFileManager *fileManager = [NSFileManager defaultManager];
         if ([fileManager fileExistsAtPath:self.cacheRootFolder]) {
@@ -297,7 +439,15 @@ static NSString *MD5(NSString *string) {
             NSString* fileName = nil;
             while ((fileName = [chileFilesEnumerator nextObject]) !=nil) {
                 NSString* fileAbsolutePath = [self.cacheRootFolder stringByAppendingPathComponent:fileName];
-                [fileManager removeItemAtPath:fileAbsolutePath error:NULL];
+                if (canRemoveBlock) {
+                    // 读取 videoInfo.json
+                    NSDictionary *info = [self videoInfoForFolder:fileName];
+                    if (!canRemoveBlock(info[@"videoURL"])) {
+                        [fileManager removeItemAtPath:fileAbsolutePath error:NULL];
+                    }
+                } else {
+                    [fileManager removeItemAtPath:fileAbsolutePath error:NULL];
+                }
             }
         }
         
@@ -308,6 +458,5 @@ static NSString *MD5(NSString *string) {
         });
     });
 }
-
 
 @end

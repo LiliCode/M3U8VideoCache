@@ -10,6 +10,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ MD5 加密函数
+
+ @param string 需要 md5 加密的字符串
+ @return 返回 md5 加密之后的大写字符串
+ */
+FOUNDATION_EXTERN NSString *MD5(NSString *string);
+
 @interface M3U8VideoCacheTool : NSObject
 /// 下载 ts 文件的队列
 @property (nonatomic, strong, readonly) NSOperationQueue *downloadQueue;
@@ -75,6 +83,53 @@ NS_ASSUME_NONNULL_BEGIN
  @param callback 清除完成之后的回调
  */
 - (void)cleanCacheWithCallback:(void (^)(void))callback;
+
+/**
+ 清除磁盘缓存数据
+
+ @param canRemoveBlock 是否可以清除该缓存
+ @param callback 清除完成之后的回调
+ */
+- (void)cleanCache:(BOOL (^ _Nullable)(NSString *URLString))canRemoveBlock callback:(void (^)(void))callback;
+
+/**
+ 根据链接保存 resumeData 数据
+
+ @param resumeData NSURLSessionDownloadTask 下载中断的断点数据
+ @param URLString NSURL 下载数据的链接
+ */
+- (void)setResumeData:(NSData *)resumeData forURL:(NSString *)URLString;
+
+/**
+ 根据链接找到 resumeData
+
+ @param URLString 下载数据的链接
+ @return NSData
+ */
+- (NSData *)resumeDataForURL:(NSString *)URLString;
+
+/**
+ 根据URL删除断点数据 resumeData
+
+ @param URLString 下载数据的链接
+ */
+- (void)removeResumeDataForURL:(NSString *)URLString;
+
+/**
+ 保存 videoInfo.json 数据
+
+ @param videoInfoData JSON Data
+ @param URLString 视频链接
+ */
+- (void)setVideoInfo:(NSData *)videoInfoData forURL:(NSString *)URLString;
+
+/**
+ 获取 videoInfo 字典数据
+
+ @param URLString 视频链接
+ @return videoInfo 信息
+ */
+- (NSDictionary *)videoInfoForURL:(NSString *)URLString;
 
 @end
 

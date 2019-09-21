@@ -54,20 +54,31 @@
         
     } else if ([request.URL tsURL]) {
         tsInfo.indexURL = [request.URL.lastPathComponent copy];
+        if (request.URL.query.length) {
+            tsInfo.indexURL = tsInfo.indexURL.append(@"?").append(request.URL.query);
+        }
     } else if ([request.URL keyURL]) {
-        tsInfo.encInfo = @{@"URI":request.URL.path};
+        NSString *URI = [request.URL.path copy];
+        if (request.URL.query.length) {
+            URI = URI.append(@"?").append(request.URL.query);
+        }
+        tsInfo.encInfo = @{@"URI":URI};
     }
     
-    NSURL *URL = nil;
+    NSURL *URL = [[M3U8VideoCacheTool sharedCache] URLForKey:paths.firstObject];
     if ([request.URL keyURL]) {
-        URL = [[M3U8VideoCacheTool sharedCache] URLForKey:request.URL.path];
-    } else {
-        URL = [[M3U8VideoCacheTool sharedCache] URLForKey:paths.firstObject];
+//        NSURL *keyURL = [[M3U8VideoCacheTool sharedCache] URLForKey:request.URL.path];
+        NSURL *keyURL = [[M3U8VideoCacheTool sharedCache] URLForKey:tsInfo.encInfo[@"URI"]];
+        if (keyURL) {
+            URL = [keyURL copy];
+        }
     }
     
     // 添加 loader
     M3U8VideoLoader *loader = [[M3U8VideoLoader alloc] initWithURL:URL];
+    loader.headers = request.headers;
     loader.delegate = self;
+    loader.isReadCache = YES;   // 播放视频，遇到有缓存必须读取
     loader.tsInfo = tsInfo;
     loader.gcdWebServerBodyReaderCompletionBlock = completionBlock;
     pthread_mutex_lock(&_lock);
@@ -80,9 +91,25 @@
 #pragma mark - M3U8VideoLoaderDelegate
 
 - (void)resourceLoader:(M3U8VideoLoader *)resourceLoader didFailWithError:(NSError *)error {
+    // https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+    // 状态码 403 404 都不重试
+    if (403 != resourceLoader.response.statusCode &&
+        404 != resourceLoader.response.statusCode) {
+        // 检查重试次数
+        if (resourceLoader.tryAgainCount < 2) {
+            [resourceLoader startRequest];
+            resourceLoader.tryAgainCount++;
+            return;
+        }
+    }
+    
+    pthread_mutex_lock(&_lock);
     [self.loaders removeObject:resourceLoader];
+    pthread_mutex_unlock(&_lock);
     if (resourceLoader.gcdWebServerBodyReaderCompletionBlock) {
         GCDWebServerDataResponse *response = [GCDWebServerDataResponse responseWithData:[NSData data] contentType:[URLTool contentTypeForURL:resourceLoader.tsInfo.tsIndexURL]];
+        NSInteger statusCode = resourceLoader.response.statusCode;
+        response.statusCode = (403 == statusCode)? 404 : statusCode;  // 403 的时候，直接返回返回给 WebServer 404
         resourceLoader.gcdWebServerBodyReaderCompletionBlock(response);
     }
 }
@@ -104,10 +131,6 @@
     pthread_mutex_lock(&_lock);
     [self.loaders removeObject:resourceLoader];
     pthread_mutex_unlock(&_lock);
-    // 加载下一个 loader
-    if (self.loaders.count) {
-        
-    }
 }
 
 
